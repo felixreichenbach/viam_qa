@@ -5,53 +5,25 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 
 Future<void> main() async {
-  try {
-    // Ensure that plugin services are initialized so that `availableCameras()`
-    // can be called before `runApp()`
-    WidgetsFlutterBinding.ensureInitialized();
+  // Ensure that plugin services are initialized so that `availableCameras()`
+  // can be called before `runApp()`
+  WidgetsFlutterBinding.ensureInitialized();
 
-    // Obtain a list of the available cameras on the device.
-    final cameras = await availableCameras();
-    print('Available cameras: ${cameras.length}');
+  // Obtain a list of the available cameras on the device.
+  final cameras = await availableCameras();
 
-    if (cameras.isEmpty) {
-      runApp(
-        MaterialApp(
-          home: Scaffold(
-            appBar: AppBar(title: const Text('Error')),
-            body: const Center(
-              child: Text('No cameras available on this device'),
-            ),
-          ),
-        ),
-      );
-      return;
-    }
+  // Get a specific camera from the list of available cameras.
+  final firstCamera = cameras.first;
 
-    // Get a specific camera from the list of available cameras.
-    final firstCamera = cameras.first;
-    print('Using camera: ${firstCamera.name}');
-
-    runApp(
-      MaterialApp(
-        theme: ThemeData.dark(),
-        home: TakePictureScreen(
-          // Pass the appropriate camera to the TakePictureScreen widget.
-          camera: firstCamera,
-        ),
+  runApp(
+    MaterialApp(
+      theme: ThemeData.dark(),
+      home: TakePictureScreen(
+        // Pass the appropriate camera to the TakePictureScreen widget.
+        camera: firstCamera,
       ),
-    );
-  } catch (e) {
-    print('Error in main: $e');
-    runApp(
-      MaterialApp(
-        home: Scaffold(
-          appBar: AppBar(title: const Text('Error')),
-          body: Center(child: Text('Failed to initialize camera: $e')),
-        ),
-      ),
-    );
-  }
+    ),
+  );
 }
 
 // A screen that allows users to take a picture using a given camera.
@@ -71,25 +43,17 @@ class TakePictureScreenState extends State<TakePictureScreen> {
   @override
   void initState() {
     super.initState();
-    print('Initializing camera controller...');
     // To display the current output from the Camera,
     // create a CameraController.
     _controller = CameraController(
       // Get a specific camera from the list of available cameras.
       widget.camera,
       // Define the resolution to use.
-      ResolutionPreset.max,
+      ResolutionPreset.medium,
     );
 
     // Next, initialize the controller. This returns a Future.
-    _initializeControllerFuture = _controller
-        .initialize()
-        .then((_) {
-          print('Camera controller initialized successfully');
-        })
-        .catchError((error) {
-          print('Camera initialization error: $error');
-        });
+    _initializeControllerFuture = _controller.initialize();
   }
 
   @override
@@ -101,78 +65,51 @@ class TakePictureScreenState extends State<TakePictureScreen> {
 
   @override
   Widget build(BuildContext context) {
-    print('Building TakePictureScreen...');
     return Scaffold(
       appBar: AppBar(title: const Text('Take a picture')),
+      // You must wait until the controller is initialized before displaying the
+      // camera preview. Use a FutureBuilder to display a loading spinner until the
+      // controller has finished initializing.
       body: FutureBuilder<void>(
         future: _initializeControllerFuture,
         builder: (context, snapshot) {
-          print('FutureBuilder state: ${snapshot.connectionState}');
-
-          if (snapshot.hasError) {
-            print('FutureBuilder error: ${snapshot.error}');
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.error, size: 64, color: Colors.red),
-                  const SizedBox(height: 16),
-                  Text('Camera Error: ${snapshot.error}'),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () {
-                      setState(() {
-                        _initializeControllerFuture = _controller.initialize();
-                      });
-                    },
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
-            );
-          }
-
           if (snapshot.connectionState == ConnectionState.done) {
-            print('Camera preview ready');
             // If the Future is complete, display the preview.
             return CameraPreview(_controller);
           } else {
-            print('Loading camera...');
             // Otherwise, display a loading indicator.
-            return const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 16),
-                  Text('Initializing camera...'),
-                ],
-              ),
-            );
+            return const Center(child: CircularProgressIndicator());
           }
         },
       ),
       floatingActionButton: FloatingActionButton(
+        // Provide an onPressed callback.
         onPressed: () async {
+          // Take the Picture in a try / catch block. If anything goes wrong,
+          // catch the error.
           try {
+            // Ensure that the camera is initialized.
             await _initializeControllerFuture;
+
+            // Attempt to take a picture and get the file `image`
+            // where it was saved.
             final image = await _controller.takePicture();
 
             if (!context.mounted) return;
 
+            // If the picture was taken, display it on a new screen.
             await Navigator.of(context).push(
               MaterialPageRoute(
-                builder: (context) =>
-                    DisplayPictureScreen(imagePath: image.path),
+                builder: (context) => DisplayPictureScreen(
+                  // Pass the automatically generated path to
+                  // the DisplayPictureScreen widget.
+                  imagePath: image.path,
+                ),
               ),
             );
           } catch (e) {
-            print('Error taking picture: $e');
-            if (context.mounted) {
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(SnackBar(content: Text('Error: $e')));
-            }
+            // If an error occurs, log the error to the console.
+            print(e);
           }
         },
         child: const Icon(Icons.camera_alt),
