@@ -2,6 +2,7 @@ import 'package:tflite_flutter/tflite_flutter.dart';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:image/image.dart' as img;
+import 'package:flutter/services.dart' show rootBundle;
 
 Future<void> analyzeImage(String imagePath) async {
   // Load the TFLite model
@@ -10,6 +11,10 @@ Future<void> analyzeImage(String imagePath) async {
   // Get model input shape
   final inputShape = interpreter.getInputTensor(0).shape;
   final inputType = interpreter.getInputTensor(0).type;
+
+  // Load labels
+  final labels = await loadLabels('assets/labels.txt');
+  print('Loaded ${labels.length} labels');
 
   print('Model input shape: $inputShape');
   print('Model input type: $inputType');
@@ -44,7 +49,17 @@ Future<void> analyzeImage(String imagePath) async {
   // Run inference
   interpreter.run(input, output);
 
-  print('Inference result: $output');
+  // Process results with labels
+  final predictions = output[0] as List<double>;
+  final results = processResults(predictions, labels);
+
+  print('=== Classification Results ===');
+  for (int i = 0; i < results.length && i < 5; i++) {
+    final result = results[i];
+    print(
+      '${i + 1}. ${result['label']}: ${(result['confidence'] * 100).toStringAsFixed(2)}%',
+    );
+  }
 
   // Don't forget to close the interpreter when done
   interpreter.close();
@@ -78,4 +93,41 @@ Uint8List _imageToUint8List(img.Image image) {
   }
 
   return convertedBytes;
+}
+
+/// Load labels from assets file
+Future<List<String>> loadLabels(String labelsPath) async {
+  try {
+    final labelsData = await rootBundle.loadString(labelsPath);
+    final labels = labelsData
+        .split('\n')
+        .map((line) => line.trim())
+        .where((line) => line.isNotEmpty)
+        .toList();
+
+    print('Successfully loaded ${labels.length} labels from $labelsPath');
+    return labels;
+  } catch (e) {
+    print('Error loading labels from $labelsPath: $e');
+    // Return generic labels as fallback
+    return List.generate(1000, (index) => 'Class_$index');
+  }
+}
+
+/// Process inference results and return sorted predictions with labels
+List<Map<String, dynamic>> processResults(
+  List<double> predictions,
+  List<String> labels,
+) {
+  final results = <Map<String, dynamic>>[];
+
+  for (int i = 0; i < predictions.length; i++) {
+    results.add({
+      'index': i,
+      'label': i < labels.length ? labels[i] : 'Unknown_$i',
+      'confidence': predictions[i],
+    });
+  }
+
+  return results;
 }
