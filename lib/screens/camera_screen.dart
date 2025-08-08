@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:viam_qa/classification.dart';
+import 'package:viam_qa/viam.dart';
 
 // A screen that allows users to take a picture using a given camera.
 class TakePictureScreen extends StatefulWidget {
@@ -28,7 +29,7 @@ class TakePictureScreenState extends State<TakePictureScreen> {
       // Get a specific camera from the list of available cameras.
       widget.camera,
       // Define the resolution to use.
-      ResolutionPreset.medium,
+      ResolutionPreset.veryHigh,
     );
 
     // Next, initialize the controller. This returns a Future.
@@ -74,8 +75,6 @@ class TakePictureScreenState extends State<TakePictureScreen> {
             // where it was saved.
             final image = await _controller.takePicture();
 
-            await analyzeImage(image.path);
-
             if (!context.mounted) return;
 
             // If the picture was taken, display it on a new screen.
@@ -100,10 +99,27 @@ class TakePictureScreenState extends State<TakePictureScreen> {
 }
 
 // A widget that displays the picture taken by the user.
-class DisplayPictureScreen extends StatelessWidget {
+class DisplayPictureScreen extends StatefulWidget {
   final String imagePath;
 
   const DisplayPictureScreen({super.key, required this.imagePath});
+
+  @override
+  State<DisplayPictureScreen> createState() => _DisplayPictureScreenState();
+}
+
+class _DisplayPictureScreenState extends State<DisplayPictureScreen> {
+  @override
+  void initState() {
+    super.initState();
+    _processImage();
+  }
+
+  Future<void> _processImage() async {
+    final inference = await analyzeImage(widget.imagePath);
+    final imgId = await uploadImageData(widget.imagePath);
+    await uploadTabularData(imgId, 'USER_OK', inference);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -111,7 +127,7 @@ class DisplayPictureScreen extends StatelessWidget {
       appBar: AppBar(title: const Text('Display the Picture')),
       // The image is stored as a file on the device. Use the `Image.file`
       // constructor with the given path to display the image.
-      body: Image.file(File(imagePath)),
+      body: Image.file(File(widget.imagePath)),
     );
   }
 }

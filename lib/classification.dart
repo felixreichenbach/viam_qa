@@ -4,7 +4,7 @@ import 'dart:typed_data';
 import 'package:image/image.dart' as img;
 import 'package:flutter/services.dart' show rootBundle;
 
-Future<void> analyzeImage(String imagePath) async {
+Future<List<Map<String, dynamic>>> analyzeImage(String imagePath) async {
   // Load the TFLite model
   final modelPath = 'assets/model.tflite'; // Update with your model file name
   final interpreter = await loadTFLiteModel(modelPath);
@@ -25,7 +25,7 @@ Future<void> analyzeImage(String imagePath) async {
   );
   if (originalImage == null) {
     print("Error: Could not decode image.");
-    return;
+    return [];
   }
   // Resize the image to the input size expected by the model
   img.Image resizedImage = img.copyResize(
@@ -63,6 +63,7 @@ Future<void> analyzeImage(String imagePath) async {
 
   // Don't forget to close the interpreter when done
   interpreter.close();
+  return results;
 }
 
 Future<Interpreter> loadTFLiteModel(String modelPath) async {
