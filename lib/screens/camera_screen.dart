@@ -79,6 +79,7 @@ class TakePictureScreenState extends State<TakePictureScreen> {
             // Attempt to take a picture and get the file `image`
             // where it was saved.
             final image = await _controller.takePicture();
+            final inference = await analyzeImage(image.path);
 
             if (!context.mounted) return;
 
@@ -89,6 +90,7 @@ class TakePictureScreenState extends State<TakePictureScreen> {
                   // Pass the automatically generated path to
                   // the DisplayPictureScreen widget.
                   imagePath: image.path,
+                  inference: inference,
                 ),
               ),
             );
@@ -106,8 +108,13 @@ class TakePictureScreenState extends State<TakePictureScreen> {
 // A widget that displays the picture taken by the user.
 class DisplayPictureScreen extends StatefulWidget {
   final String imagePath;
+  final List<Map<String, dynamic>> inference;
 
-  const DisplayPictureScreen({super.key, required this.imagePath});
+  const DisplayPictureScreen({
+    super.key,
+    required this.imagePath,
+    required this.inference,
+  });
 
   @override
   State<DisplayPictureScreen> createState() => _DisplayPictureScreenState();
@@ -117,22 +124,53 @@ class _DisplayPictureScreenState extends State<DisplayPictureScreen> {
   @override
   void initState() {
     super.initState();
-    _processImage();
   }
 
-  Future<void> _processImage() async {
-    final inference = await analyzeImage(widget.imagePath);
+  Future<void> _uploadViam() async {
     final imgId = await uploadImageData(widget.imagePath);
-    await uploadTabularData(imgId, 'USER_OK', inference);
+    await uploadTabularData(imgId, 'USER_OK', widget.inference);
   }
 
   @override
   Widget build(BuildContext context) {
+    print(widget.inference);
+
+    // Default color
+    Color borderColor = Colors.red;
+
+    // Find values for VIAM_UNKNOWN, OK, NOK
+    double viamUnknown = 0.0;
+    double ok = 0.0;
+    double nok = 0.0;
+
+    for (var item in widget.inference) {
+      if (item['label'] == 'VIAM_UNKNOWN') {
+        viamUnknown = (item['confidence'] ?? 0.0).toDouble();
+      } else if (item['label'] == 'OK') {
+        ok = (item['confidence'] ?? 0.0).toDouble();
+      } else if (item['label'] == 'NOK') {
+        nok = (item['confidence'] ?? 0.0).toDouble();
+      }
+    }
+
+    if (viamUnknown > 0.1) {
+      borderColor = Colors.yellow;
+    } else if (ok > nok) {
+      borderColor = Colors.green;
+    } else {
+      borderColor = Colors.red;
+    }
+
     return Scaffold(
       appBar: AppBar(title: const Text('Display the Picture')),
-      // The image is stored as a file on the device. Use the `Image.file`
-      // constructor with the given path to display the image.
-      body: Image.file(File(widget.imagePath)),
+      body: Center(
+        child: Container(
+          decoration: BoxDecoration(
+            border: Border.all(color: borderColor, width: 4),
+          ),
+          child: Image.file(File(widget.imagePath)),
+        ),
+      ),
     );
   }
 }
