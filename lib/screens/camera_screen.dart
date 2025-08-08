@@ -121,14 +121,27 @@ class DisplayPictureScreen extends StatefulWidget {
 }
 
 class _DisplayPictureScreenState extends State<DisplayPictureScreen> {
+  // User image rating - null means no choice made yet
+  bool? userRatingOK;
+
   @override
   void initState() {
     super.initState();
   }
 
   Future<void> _uploadViam() async {
-    final imgId = await uploadImageData(widget.imagePath);
-    await uploadTabularData(imgId, 'USER_OK', widget.inference);
+    final imgId = await uploadImageData(
+      widget.imagePath,
+      widget.inference,
+      userRatingOK!
+          ? 'USER_OK'
+          : 'USER_NOK', // ! is safe here because we check before calling
+    );
+    await uploadTabularData(
+      imgId,
+      userRatingOK! ? 'USER_OK' : 'USER_NOK',
+      widget.inference,
+    );
   }
 
   @override
@@ -163,28 +176,116 @@ class _DisplayPictureScreenState extends State<DisplayPictureScreen> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Picture')),
-      body: Center(
-        child: Container(
-          decoration: BoxDecoration(
-            border: Border.all(color: borderColor, width: 4),
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Expanded(
+            child: Center(
+              child: Container(
+                decoration: BoxDecoration(
+                  border: Border.all(color: borderColor, width: 4),
+                ),
+                child: Image.file(File(widget.imagePath), fit: BoxFit.contain),
+              ),
+            ),
           ),
-          child: Image.file(File(widget.imagePath)),
-        ),
+          // Rating section
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                if (userRatingOK == null)
+                  const Text(
+                    'Please rate this image:',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        icon: Icon(
+                          Icons.check_circle,
+                          color: userRatingOK == true
+                              ? Colors.white
+                              : Colors.green,
+                        ),
+                        label: const Text('OK'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: userRatingOK == true
+                              ? Colors.green
+                              : Colors.grey[300],
+                          foregroundColor: userRatingOK == true
+                              ? Colors.white
+                              : Colors.black,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            userRatingOK = true;
+                          });
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        icon: Icon(
+                          Icons.cancel,
+                          color: userRatingOK == false
+                              ? Colors.white
+                              : Colors.red,
+                        ),
+                        label: const Text('NOK'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: userRatingOK == false
+                              ? Colors.red
+                              : Colors.grey[300],
+                          foregroundColor: userRatingOK == false
+                              ? Colors.white
+                              : Colors.black,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            userRatingOK = false;
+                          });
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
-        // Provide an onPressed callback.
-        onPressed: () async {
-          // Upload the image to Viam
-          await _uploadViam();
+        // Disable the button if no choice has been made
+        onPressed: userRatingOK == null
+            ? null
+            : () async {
+                try {
+                  // Upload the image to Viam
+                  await _uploadViam();
 
-          // Show a snackbar to indicate success
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Image uploaded successfully!')),
-          );
+                  // Show a snackbar to indicate success
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Image uploaded successfully!'),
+                    ),
+                  );
 
-          // Optionally, navigate back or perform other actions
-          Navigator.pop(context);
-        },
+                  // Navigate back
+                  Navigator.pop(context);
+                } catch (e) {
+                  // Show error message
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text('Upload failed: $e')));
+                }
+              },
+        backgroundColor: userRatingOK == null ? Colors.grey : null,
         child: const Icon(Icons.cloud_upload),
       ),
     );
