@@ -1,40 +1,22 @@
-import 'package:flutter/material.dart';
+import 'dart:async';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:camera/camera.dart';
+import 'package:flutter/material.dart';
+import 'package:viam_qa/screens/camera_screen.dart';
 
-void main() async {
-  // await dotenv.load(); // <-- This loads your API key; will un-comment later
-  runApp(MyApp());
-}
+Future<void> main() async {
+  await dotenv.load();
+  WidgetsFlutterBinding.ensureInitialized();
+  final cameras = await availableCameras();
+  final firstCamera = cameras.first;
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Smart Machine App',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.purple),
+  runApp(
+    MaterialApp(
+      theme: ThemeData.dark(),
+      home: TakePictureScreen(
+        // Pass the appropriate camera to the TakePictureScreen widget.
+        camera: firstCamera,
       ),
-      home: MyHomePage(),
-    );
-  }
-}
-
-class MyHomePage extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text('Smart Machine App'),
-            SizedBox(height: 16),
-            ElevatedButton(onPressed: null, child: Text('Login')),
-          ],
-        ),
-      ),
-    );
-  }
+    ),
+  );
 }
