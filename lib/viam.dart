@@ -37,14 +37,28 @@ Future<void> uploadTabularData(
       componentName: "qa-app",
       methodName: "Readings",
       dataRequestTimes: dataRequestTimes,
-      tags: ["felix_test"],
+      tags: ["test"],
     );
   } catch (e) {
     print(e);
   }
 }
 
-Future<String> uploadImageData(String imagePath) async {
+Future<String> uploadImageData(
+  String imagePath,
+  List<Map<String, dynamic>> inference,
+  String userRating,
+) async {
+  // Extract the classification with the higher score from inference
+  String mlRating = '';
+  if (inference.isNotEmpty) {
+    inference.sort((a, b) {
+      final aConfidence = (a['confidence'] as num?) ?? 0.0;
+      final bConfidence = (b['confidence'] as num?) ?? 0.0;
+      return bConfidence.compareTo(aConfidence);
+    });
+    mlRating = inference.first['label'] ?? '';
+  }
   try {
     _viam = await Viam.withApiKey(
       dotenv.env['API_KEY_ID'] ?? '',
@@ -64,7 +78,7 @@ Future<String> uploadImageData(String imagePath) async {
       methodName: "ReadImage",
       '.jpg',
       dataRequestTimes: dataRequestTimes,
-      tags: ["felix_test"],
+      tags: ["flutter", userRating, mlRating],
     );
     print('Image data upload result: $result');
     return result;
