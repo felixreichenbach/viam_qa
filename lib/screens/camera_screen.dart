@@ -162,7 +162,7 @@ class _DisplayPictureScreenState extends State<DisplayPictureScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Display the Picture')),
+      appBar: AppBar(title: const Text('Picture')),
       body: Center(
         child: Container(
           decoration: BoxDecoration(
@@ -170,6 +170,22 @@ class _DisplayPictureScreenState extends State<DisplayPictureScreen> {
           ),
           child: Image.file(File(widget.imagePath)),
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        // Provide an onPressed callback.
+        onPressed: () async {
+          // Upload the image to Viam
+          await _uploadViam();
+
+          // Show a snackbar to indicate success
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Image uploaded successfully!')),
+          );
+
+          // Optionally, navigate back or perform other actions
+          Navigator.pop(context);
+        },
+        child: const Icon(Icons.cloud_upload),
       ),
     );
   }
