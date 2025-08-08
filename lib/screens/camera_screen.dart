@@ -33,7 +33,10 @@ class TakePictureScreenState extends State<TakePictureScreen> {
     );
 
     // Next, initialize the controller. This returns a Future.
-    _initializeControllerFuture = _controller.initialize();
+    _initializeControllerFuture = _controller.initialize().then((_) {
+      _controller.setFlashMode(FlashMode.always);
+      print('Flash enabled automatically');
+    });
   }
 
   @override
@@ -70,7 +73,9 @@ class TakePictureScreenState extends State<TakePictureScreen> {
           try {
             // Ensure that the camera is initialized.
             await _initializeControllerFuture;
-
+            // Ensure flash is set right before taking the picture
+            await _controller.setFlashMode(FlashMode.always);
+            print('Flash mode before capture: ${_controller.value.flashMode}');
             // Attempt to take a picture and get the file `image`
             // where it was saved.
             final image = await _controller.takePicture();

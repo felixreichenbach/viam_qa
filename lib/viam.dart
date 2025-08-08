@@ -5,8 +5,8 @@ import 'dart:io';
 late Viam _viam;
 
 Future<void> uploadTabularData(
-  String img_id,
-  String user_classification,
+  String imgId,
+  String userClassification,
   List<Map<String, dynamic>> inference,
 ) async {
   try {
@@ -20,8 +20,8 @@ Future<void> uploadTabularData(
       {
         'readings': {
           'classifications': inference,
-          'user_classification': user_classification,
-          'image_id': img_id,
+          'user_classification': userClassification,
+          'image_id': imgId,
         },
       },
     ];
@@ -30,7 +30,7 @@ Future<void> uploadTabularData(
       (DateTime.now(), DateTime.now()),
     ];
 
-    final result = await _viam.dataClient.tabularDataCaptureUpload(
+    final _ = await _viam.dataClient.tabularDataCaptureUpload(
       tabularData,
       '177e6f10-4505-42fe-bf81-bb2867b680a0',
       componentType: "rdk:component:sensor",
@@ -39,14 +39,12 @@ Future<void> uploadTabularData(
       dataRequestTimes: dataRequestTimes,
       tags: ["felix_test"],
     );
-    print('Tabular data upload result: $result');
   } catch (e) {
     print(e);
   }
 }
 
 Future<String> uploadImageData(String imagePath) async {
-  print('Uploading image data from $imagePath');
   try {
     _viam = await Viam.withApiKey(
       dotenv.env['API_KEY_ID'] ?? '',
