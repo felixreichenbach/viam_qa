@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:viam_qa/classification.dart';
 import 'package:viam_qa/viam.dart';
 
@@ -33,6 +34,7 @@ class TakePictureScreenState extends State<TakePictureScreen> {
     );
     _initializeControllerFuture = _controller.initialize().then((_) {
       _controller.setFlashMode(FlashMode.always);
+      _controller.lockCaptureOrientation(DeviceOrientation.portraitUp);
       print('Flash enabled automatically');
     });
     _classificationService.init().then((_) {
@@ -60,8 +62,10 @@ class TakePictureScreenState extends State<TakePictureScreen> {
         future: _initializeControllerFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.done) {
-            // If the Future is complete, display the preview.
-            return CameraPreview(_controller);
+            // Lock preview in portrait mode and maintain aspect ratio.
+            return Center(
+              child: CameraPreview(_controller),
+            );
           } else {
             // Otherwise, display a loading indicator.
             return const Center(child: CircularProgressIndicator());
