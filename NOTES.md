@@ -14,3 +14,7 @@ https://github.com/bgrigsby8/landmarked
 https://docs.flutter.dev/deployment/android#build-the-app-for-release
 
 flutter build appbundle
+
+## Replace Logo
+
+https://www.youtube.com/watch?v=oRBWPm7nCV0

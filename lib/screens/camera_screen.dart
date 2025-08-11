@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:viam_qa/classification.dart';
 import 'package:viam_qa/viam.dart';
 
@@ -29,9 +30,11 @@ class TakePictureScreenState extends State<TakePictureScreen> {
     _controller = CameraController(
       widget.camera,
       ResolutionPreset.veryHigh,
+      enableAudio: false,
     );
     _initializeControllerFuture = _controller.initialize().then((_) {
       _controller.setFlashMode(FlashMode.always);
+      _controller.lockCaptureOrientation(DeviceOrientation.portraitUp);
       print('Flash enabled automatically');
     });
     _classificationService.init().then((_) {
@@ -59,8 +62,10 @@ class TakePictureScreenState extends State<TakePictureScreen> {
         future: _initializeControllerFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.done) {
-            // If the Future is complete, display the preview.
-            return CameraPreview(_controller);
+            // Lock preview in portrait mode and maintain aspect ratio.
+            return Center(
+              child: CameraPreview(_controller),
+            );
           } else {
             // Otherwise, display a loading indicator.
             return const Center(child: CircularProgressIndicator());
@@ -189,14 +194,9 @@ class _DisplayPictureScreenState extends State<DisplayPictureScreen> {
           ),
           // Rating section
           Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 24.0),
             child: Column(
               children: [
-                if (userRatingOK == null)
-                  const Text(
-                    'Please rate this image:',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
                 const SizedBox(height: 16),
                 Row(
                   children: [
@@ -257,33 +257,38 @@ class _DisplayPictureScreenState extends State<DisplayPictureScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        // Disable the button if no choice has been made
-        onPressed: userRatingOK == null
-            ? null
-            : () async {
-                try {
-                  // Upload the image to Viam
-                  await _uploadViam();
+      floatingActionButton: Padding(
+        padding:
+            const EdgeInsets.only(bottom: 80.0), // Move FAB up by 80 pixels
+        child: FloatingActionButton(
+          // Disable the button if no choice has been made
+          onPressed: userRatingOK == null
+              ? null
+              : () async {
+                  try {
+                    // Upload the image to Viam
+                    await _uploadViam();
 
-                  // Show a snackbar to indicate success
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Image uploaded successfully!'),
-                    ),
-                  );
+                    // Show a snackbar to indicate success
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Image uploaded successfully!'),
+                      ),
+                    );
 
-                  // Navigate back
-                  Navigator.pop(context);
-                } catch (e) {
-                  // Show error message
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(SnackBar(content: Text('Upload failed: $e')));
-                }
-              },
-        backgroundColor: userRatingOK == null ? Colors.grey : null,
-        child: const Icon(Icons.cloud_upload),
+                    // Navigate back
+                    Navigator.pop(context);
+                  } catch (e) {
+                    // Show error message
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(
+                        SnackBar(content: Text('Upload failed: $e')));
+                  }
+                },
+          backgroundColor: userRatingOK == null ? Colors.grey : null,
+          child: const Icon(Icons.cloud_upload),
+        ),
       ),
     );
   }
