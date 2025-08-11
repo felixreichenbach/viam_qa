@@ -29,6 +29,7 @@ class TakePictureScreenState extends State<TakePictureScreen> {
     _controller = CameraController(
       widget.camera,
       ResolutionPreset.veryHigh,
+      enableAudio: false,
     );
     _initializeControllerFuture = _controller.initialize().then((_) {
       _controller.setFlashMode(FlashMode.always);
