@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
@@ -19,30 +20,31 @@ class TakePictureScreen extends StatefulWidget {
 class TakePictureScreenState extends State<TakePictureScreen> {
   late CameraController _controller;
   late Future<void> _initializeControllerFuture;
+  final ClassificationService _classificationService = ClassificationService();
+  bool _classificationInitialized = false;
 
   @override
   void initState() {
     super.initState();
-    // To display the current output from the Camera,
-    // create a CameraController.
     _controller = CameraController(
-      // Get a specific camera from the list of available cameras.
       widget.camera,
-      // Define the resolution to use.
       ResolutionPreset.veryHigh,
     );
-
-    // Next, initialize the controller. This returns a Future.
     _initializeControllerFuture = _controller.initialize().then((_) {
       _controller.setFlashMode(FlashMode.always);
       print('Flash enabled automatically');
+    });
+    _classificationService.init().then((_) {
+      setState(() {
+        _classificationInitialized = true;
+      });
     });
   }
 
   @override
   void dispose() {
-    // Dispose of the controller when the widget is disposed.
     _controller.dispose();
+    _classificationService.dispose();
     super.dispose();
   }
 
@@ -67,38 +69,33 @@ class TakePictureScreenState extends State<TakePictureScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         // Provide an onPressed callback.
-        onPressed: () async {
-          // Take the Picture in a try / catch block. If anything goes wrong,
-          // catch the error.
-          try {
-            // Ensure that the camera is initialized.
-            await _initializeControllerFuture;
-            // Ensure flash is set right before taking the picture
-            await _controller.setFlashMode(FlashMode.always);
-            print('Flash mode before capture: ${_controller.value.flashMode}');
-            // Attempt to take a picture and get the file `image`
-            // where it was saved.
-            final image = await _controller.takePicture();
-            final inference = await analyzeImage(image.path);
+        onPressed: !_classificationInitialized
+            ? null
+            : () async {
+                try {
+                  await _initializeControllerFuture;
+                  await _controller.setFlashMode(FlashMode.always);
+                  print(
+                      'Flash mode before capture: \\${_controller.value.flashMode}');
+                  final image = await _controller.takePicture();
+                  final imageBytes = await image.readAsBytes();
+                  final inference =
+                      await _classificationService.analyzeImage(imageBytes);
 
-            if (!context.mounted) return;
+                  if (!context.mounted) return;
 
-            // If the picture was taken, display it on a new screen.
-            await Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) => DisplayPictureScreen(
-                  // Pass the automatically generated path to
-                  // the DisplayPictureScreen widget.
-                  imagePath: image.path,
-                  inference: inference,
-                ),
-              ),
-            );
-          } catch (e) {
-            // If an error occurs, log the error to the console.
-            print(e);
-          }
-        },
+                  await Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => DisplayPictureScreen(
+                        imageBytes: imageBytes,
+                        inference: inference,
+                      ),
+                    ),
+                  );
+                } catch (e) {
+                  print(e);
+                }
+              },
         child: const Icon(Icons.camera_alt),
       ),
     );
@@ -107,12 +104,12 @@ class TakePictureScreenState extends State<TakePictureScreen> {
 
 // A widget that displays the picture taken by the user.
 class DisplayPictureScreen extends StatefulWidget {
-  final String imagePath;
+  final Uint8List imageBytes;
   final List<Map<String, dynamic>> inference;
 
   const DisplayPictureScreen({
     super.key,
-    required this.imagePath,
+    required this.imageBytes,
     required this.inference,
   });
 
@@ -130,8 +127,9 @@ class _DisplayPictureScreenState extends State<DisplayPictureScreen> {
   }
 
   Future<void> _uploadViam() async {
+    widget.imageBytes;
     final imgId = await uploadImageData(
-      widget.imagePath,
+      widget.imageBytes,
       widget.inference,
       userRatingOK!
           ? 'USER_OK'
@@ -185,7 +183,7 @@ class _DisplayPictureScreenState extends State<DisplayPictureScreen> {
                 decoration: BoxDecoration(
                   border: Border.all(color: borderColor, width: 4),
                 ),
-                child: Image.file(File(widget.imagePath), fit: BoxFit.contain),
+                child: Image.memory(widget.imageBytes, fit: BoxFit.contain),
               ),
             ),
           ),
@@ -232,9 +230,8 @@ class _DisplayPictureScreenState extends State<DisplayPictureScreen> {
                       child: ElevatedButton.icon(
                         icon: Icon(
                           Icons.cancel,
-                          color: userRatingOK == false
-                              ? Colors.white
-                              : Colors.red,
+                          color:
+                              userRatingOK == false ? Colors.white : Colors.red,
                         ),
                         label: const Text('NOK'),
                         style: ElevatedButton.styleFrom(
