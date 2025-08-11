@@ -159,25 +159,6 @@ Future<Interpreter> loadTFLiteModel(String modelPath) async {
   }
 }
 
-/// Convert image to Uint8List for uint8 models
-Uint8List _imageToUint8List(img.Image image) {
-  final convertedBytes = Uint8List(1 * image.height * image.width * 3);
-  int pixelIndex = 0;
-
-  for (int y = 0; y < image.height; y++) {
-    for (int x = 0; x < image.width; x++) {
-      final pixel = image.getPixel(x, y);
-
-      // Extract RGB values using the correct API (no normalization for uint8)
-      convertedBytes[pixelIndex++] = pixel.r.toInt();
-      convertedBytes[pixelIndex++] = pixel.g.toInt();
-      convertedBytes[pixelIndex++] = pixel.b.toInt();
-    }
-  }
-
-  return convertedBytes;
-}
-
 /// Load labels from assets file
 Future<List<String>> loadLabels(String labelsPath) async {
   try {
