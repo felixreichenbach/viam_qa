@@ -1,6 +1,7 @@
+import 'dart:typed_data';
+
 import 'package:viam_sdk/viam_sdk.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'dart:io';
 
 late Viam _viam;
 
@@ -45,7 +46,7 @@ Future<void> uploadTabularData(
 }
 
 Future<String> uploadImageData(
-  String imagePath,
+  Uint8List imageBytes,
   List<Map<String, dynamic>> inference,
   String userRating,
 ) async {
@@ -64,9 +65,6 @@ Future<String> uploadImageData(
       dotenv.env['API_KEY_ID'] ?? '',
       dotenv.env['API_KEY'] ?? '',
     );
-
-    final image = File(imagePath);
-    final imageBytes = await image.readAsBytes();
 
     (DateTime, DateTime) dataRequestTimes = (DateTime.now(), DateTime.now());
 
