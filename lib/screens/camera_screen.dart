@@ -190,14 +190,9 @@ class _DisplayPictureScreenState extends State<DisplayPictureScreen> {
           ),
           // Rating section
           Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 24.0),
             child: Column(
               children: [
-                if (userRatingOK == null)
-                  const Text(
-                    'Please rate this image:',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
                 const SizedBox(height: 16),
                 Row(
                   children: [
@@ -258,33 +253,38 @@ class _DisplayPictureScreenState extends State<DisplayPictureScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        // Disable the button if no choice has been made
-        onPressed: userRatingOK == null
-            ? null
-            : () async {
-                try {
-                  // Upload the image to Viam
-                  await _uploadViam();
+      floatingActionButton: Padding(
+        padding:
+            const EdgeInsets.only(bottom: 80.0), // Move FAB up by 80 pixels
+        child: FloatingActionButton(
+          // Disable the button if no choice has been made
+          onPressed: userRatingOK == null
+              ? null
+              : () async {
+                  try {
+                    // Upload the image to Viam
+                    await _uploadViam();
 
-                  // Show a snackbar to indicate success
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Image uploaded successfully!'),
-                    ),
-                  );
+                    // Show a snackbar to indicate success
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Image uploaded successfully!'),
+                      ),
+                    );
 
-                  // Navigate back
-                  Navigator.pop(context);
-                } catch (e) {
-                  // Show error message
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(SnackBar(content: Text('Upload failed: $e')));
-                }
-              },
-        backgroundColor: userRatingOK == null ? Colors.grey : null,
-        child: const Icon(Icons.cloud_upload),
+                    // Navigate back
+                    Navigator.pop(context);
+                  } catch (e) {
+                    // Show error message
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(
+                        SnackBar(content: Text('Upload failed: $e')));
+                  }
+                },
+          backgroundColor: userRatingOK == null ? Colors.grey : null,
+          child: const Icon(Icons.cloud_upload),
+        ),
       ),
     );
   }
