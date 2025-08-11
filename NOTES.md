@@ -13,7 +13,9 @@ https://github.com/bgrigsby8/landmarked
 
 https://docs.flutter.dev/deployment/android#build-the-app-for-release
 
-flutter build appbundle
+```shell
+flutter build apk --release
+```
 
 ## Replace Logo
 
