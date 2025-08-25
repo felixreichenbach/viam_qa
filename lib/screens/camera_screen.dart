@@ -1,7 +1,4 @@
 import 'dart:async';
-import 'dart:io';
-import 'dart:typed_data';
-
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -24,6 +21,8 @@ class TakePictureScreenState extends State<TakePictureScreen> {
   final ClassificationService _classificationService = ClassificationService();
   bool _classificationInitialized = false;
 
+  FlashMode _flashMode = FlashMode.auto;
+
   @override
   void initState() {
     super.initState();
@@ -33,7 +32,7 @@ class TakePictureScreenState extends State<TakePictureScreen> {
       enableAudio: false,
     );
     _initializeControllerFuture = _controller.initialize().then((_) {
-      _controller.setFlashMode(FlashMode.always);
+      _controller.setFlashMode(_flashMode);
       _controller.lockCaptureOrientation(DeviceOrientation.portraitUp);
       print('Flash enabled automatically');
     });
@@ -55,31 +54,58 @@ class TakePictureScreenState extends State<TakePictureScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Take a picture')),
-      // You must wait until the controller is initialized before displaying the
-      // camera preview. Use a FutureBuilder to display a loading spinner until the
-      // controller has finished initializing.
       body: FutureBuilder<void>(
         future: _initializeControllerFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.done) {
-            // Lock preview in portrait mode and maintain aspect ratio.
-            return Center(
-              child: CameraPreview(_controller),
+            return Stack(
+              children: [
+                Center(child: CameraPreview(_controller)),
+                Positioned(
+                  top: 24,
+                  left: 16,
+                  child: Material(
+                    color: Colors.transparent,
+                    child: IconButton(
+                      icon: Icon(
+                        _flashMode == FlashMode.off
+                            ? Icons.flash_off
+                            : _flashMode == FlashMode.always
+                                ? Icons.flash_on
+                                : Icons.flash_auto,
+                        color: Colors.yellow,
+                        size: 32,
+                      ),
+                      tooltip: 'Toggle Flash',
+                      onPressed: () async {
+                        setState(() {
+                          if (_flashMode == FlashMode.auto) {
+                            _flashMode = FlashMode.always;
+                          } else if (_flashMode == FlashMode.always) {
+                            _flashMode = FlashMode.off;
+                          } else {
+                            _flashMode = FlashMode.auto;
+                          }
+                        });
+                        await _controller.setFlashMode(_flashMode);
+                      },
+                    ),
+                  ),
+                ),
+              ],
             );
           } else {
-            // Otherwise, display a loading indicator.
             return const Center(child: CircularProgressIndicator());
           }
         },
       ),
       floatingActionButton: FloatingActionButton(
-        // Provide an onPressed callback.
         onPressed: !_classificationInitialized
             ? null
             : () async {
                 try {
                   await _initializeControllerFuture;
-                  await _controller.setFlashMode(FlashMode.always);
+                  await _controller.setFlashMode(_flashMode);
                   print(
                       'Flash mode before capture: \\${_controller.value.flashMode}');
                   final image = await _controller.takePicture();
