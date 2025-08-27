@@ -22,4 +22,5 @@ flutter build apk --release
 ```
 
 You can then get the APK package from the outputs directory:
+
 `build/app/outputs/flutter-apk/app-release.apk`
