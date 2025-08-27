@@ -295,9 +295,17 @@ class _DisplayPictureScreenState extends State<DisplayPictureScreen> {
                     if (!mounted) return;
                     // Show a snackbar to indicate success
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Image uploaded successfully!',
-                            style: TextStyle(color: Colors.green)),
+                      SnackBar(
+                        content: Center(
+                          child: Text(
+                            'Image uploaded successfully!',
+                            style: TextStyle(
+                              color: Colors.green,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
                       ),
                     );
 
@@ -308,9 +316,20 @@ class _DisplayPictureScreenState extends State<DisplayPictureScreen> {
                     // Show error message
                     ScaffoldMessenger.of(
                       context,
-                    ).showSnackBar(SnackBar(
-                        content: Text('Upload failed: $e',
-                            style: TextStyle(color: Colors.red))));
+                    ).showSnackBar(
+                      SnackBar(
+                        content: Center(
+                          child: Text(
+                            'Upload failed: $e',
+                            style: TextStyle(
+                              color: Colors.red,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                    );
                   }
                 },
           backgroundColor: userRatingOK == null ? Colors.grey : null,
