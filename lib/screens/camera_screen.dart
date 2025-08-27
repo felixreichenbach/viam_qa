@@ -78,6 +78,7 @@ class TakePictureScreenState extends State<TakePictureScreen> {
                       ),
                       tooltip: 'Toggle Flash',
                       onPressed: () async {
+                        if (!mounted) return;
                         setState(() {
                           if (_flashMode == FlashMode.auto) {
                             _flashMode = FlashMode.always;
@@ -113,8 +114,7 @@ class TakePictureScreenState extends State<TakePictureScreen> {
                   final inference =
                       await _classificationService.analyzeImage(imageBytes);
 
-                  if (!context.mounted) return;
-
+                  if (!mounted) return;
                   await Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (context) => DisplayPictureScreen(
@@ -158,13 +158,10 @@ class _DisplayPictureScreenState extends State<DisplayPictureScreen> {
   }
 
   Future<void> _uploadViam() async {
-    widget.imageBytes;
     final imgId = await uploadImageData(
       widget.imageBytes,
       widget.inference,
-      userRatingOK!
-          ? 'USER_OK'
-          : 'USER_NOK', // ! is safe here because we check before calling
+      userRatingOK! ? 'USER_OK' : 'USER_NOK',
     );
     await uploadTabularData(
       imgId,
@@ -295,21 +292,25 @@ class _DisplayPictureScreenState extends State<DisplayPictureScreen> {
                     // Upload the image to Viam
                     await _uploadViam();
 
+                    if (!mounted) return;
                     // Show a snackbar to indicate success
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text('Image uploaded successfully!'),
+                        content: Text('Image uploaded successfully!',
+                            style: TextStyle(color: Colors.green)),
                       ),
                     );
 
                     // Navigate back
                     Navigator.pop(context);
                   } catch (e) {
+                    if (!mounted) return;
                     // Show error message
                     ScaffoldMessenger.of(
                       context,
-                    ).showSnackBar(
-                        SnackBar(content: Text('Upload failed: $e')));
+                    ).showSnackBar(SnackBar(
+                        content: Text('Upload failed: $e',
+                            style: TextStyle(color: Colors.red))));
                   }
                 },
           backgroundColor: userRatingOK == null ? Colors.grey : null,
