@@ -111,7 +111,8 @@ class TakePictureScreenState extends State<TakePictureScreen> {
                   print(
                       'Flash mode before capture: \\${_controller.value.flashMode}');
                   final xfimage = await _controller.takePicture();
-                  final image = img.decodeImage(await xfimage.readAsBytes());
+                  final imageBytes = await xfimage.readAsBytes();
+                  final image = img.decodeImage(imageBytes);
                   if (image == null) {
                     // Handle decoding failure
                     if (!mounted) return;
@@ -122,14 +123,14 @@ class TakePictureScreenState extends State<TakePictureScreen> {
                     );
                     return;
                   }
-                  final (inference, resimage) =
+                  final (inference, _) =
                       await _classificationService.analyzeImage(image);
 
                   if (!mounted) return;
                   await Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (context) => DisplayPictureScreen(
-                        imageBytes: Uint8List.fromList(img.encodeJpg(resimage)),
+                        imageBytes: imageBytes,
                         inference: inference,
                       ),
                     ),
