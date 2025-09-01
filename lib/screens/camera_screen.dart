@@ -192,7 +192,7 @@ class _DisplayPictureScreenState extends State<DisplayPictureScreen> {
       }
     }
 
-    if (viamUnknown > 0.1) {
+    if (viamUnknown >= 0.001) {
       borderColor = Colors.yellow;
     } else if (ok > nok) {
       borderColor = Colors.green;
