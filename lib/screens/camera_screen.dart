@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:viam_qa/classification.dart';
 import 'package:viam_qa/viam.dart';
+import 'package:image/image.dart' as img;
 
 // A screen that allows users to take a picture using a given camera.
 class TakePictureScreen extends StatefulWidget {
@@ -109,16 +110,26 @@ class TakePictureScreenState extends State<TakePictureScreen> {
                   await _controller.setFlashMode(_flashMode);
                   print(
                       'Flash mode before capture: \\${_controller.value.flashMode}');
-                  final image = await _controller.takePicture();
-                  final imageBytes = await image.readAsBytes();
-                  final inference =
-                      await _classificationService.analyzeImage(imageBytes);
+                  final xfimage = await _controller.takePicture();
+                  final image = img.decodeImage(await xfimage.readAsBytes());
+                  if (image == null) {
+                    // Handle decoding failure
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Failed to decode image.'),
+                      ),
+                    );
+                    return;
+                  }
+                  final (inference, resimage) =
+                      await _classificationService.analyzeImage(image);
 
                   if (!mounted) return;
                   await Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (context) => DisplayPictureScreen(
-                        imageBytes: imageBytes,
+                        imageBytes: Uint8List.fromList(img.encodeJpg(resimage)),
                         inference: inference,
                       ),
                     ),
