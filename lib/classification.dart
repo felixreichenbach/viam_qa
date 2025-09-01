@@ -18,7 +18,8 @@ class ClassificationService {
     print('Model and labels loaded successfully.');
   }
 
-  Future<List<Map<String, dynamic>>> analyzeImage(Uint8List imageBytes) async {
+  Future<(List<Map<String, dynamic>>, img.Image)> analyzeImage(
+      img.Image image) async {
     if (!_initialized) {
       throw Exception(
           'ClassificationService not initialized. Call init() first.');
@@ -32,17 +33,41 @@ class ClassificationService {
     print('Model input shape: $inputShape');
     print('Model input type: $inputType');
 
-    // Decode the image file bytes
-    img.Image? originalImage = img.decodeImage(
-      imageBytes,
-    );
-    if (originalImage == null) {
-      print("Error: Could not decode image.");
-      return [];
+    // Rotate the image -90 degrees clockwise
+    img.Image rotatedImage = img.copyRotate(image, angle: -90);
+
+    // Center crop the image to 4:3 aspect ratio
+    final targetAspectRatio = 4 / 3;
+    final origWidth = rotatedImage.width;
+    final origHeight = rotatedImage.height;
+    print('Original image size (w,h): ${origWidth}x${origHeight}');
+    double origAspectRatio = origWidth / origHeight;
+
+    int cropWidth, cropHeight;
+    if (origAspectRatio > targetAspectRatio) {
+      // Image is wider than target aspect ratio
+      cropHeight = origHeight;
+      cropWidth = (cropHeight * targetAspectRatio).round();
+    } else {
+      // Image is taller than target aspect ratio
+      cropWidth = origWidth;
+      cropHeight = (cropWidth / targetAspectRatio).round();
     }
+
+    final cropX = ((origWidth - cropWidth) / 2).round();
+    final cropY = ((origHeight - cropHeight) / 2).round();
+
+    img.Image croppedImage = img.copyCrop(
+      rotatedImage,
+      x: cropX,
+      y: cropY,
+      width: cropWidth,
+      height: cropHeight,
+    );
+
     // Resize the image to the input size expected by the model
     img.Image resizedImage = img.copyResize(
-      originalImage,
+      croppedImage,
       width: 256,
       height: 256,
     );
@@ -74,7 +99,7 @@ class ClassificationService {
       );
     }
 
-    return results;
+    return (results, image);
   }
 
   void dispose() {
