@@ -36,8 +36,8 @@ class ClassificationService {
     // Rotate the image -90 degrees clockwise
     img.Image rotatedImage = img.copyRotate(image, angle: -90);
 
-    // Center crop the image to 4:3 aspect ratio
-    final targetAspectRatio = 4 / 3;
+    // Center crop the image to aspect ratio
+    final targetAspectRatio = 1 / 1;
     final origWidth = rotatedImage.width;
     final origHeight = rotatedImage.height;
     print('Original image size (w,h): ${origWidth}x${origHeight}');
@@ -99,7 +99,7 @@ class ClassificationService {
       );
     }
 
-    return (results, image);
+    return (results, croppedImage);
   }
 
   void dispose() {
