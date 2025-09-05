@@ -123,9 +123,9 @@ class TakePictureScreenState extends State<TakePictureScreen> {
                     );
                     return;
                   }
-                  final (inference, _) =
+                  final (inference, procImage) =
                       await _classificationService.analyzeImage(image);
-
+                  //final imageBytes2 = img.encodeJpg(procImage);
                   if (!mounted) return;
                   await Navigator.of(context).push(
                     MaterialPageRoute(
