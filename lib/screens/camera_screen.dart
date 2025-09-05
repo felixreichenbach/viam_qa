@@ -195,7 +195,7 @@ class _DisplayPictureScreenState extends State<DisplayPictureScreen> {
     double nok = 0.0;
 
     for (var item in widget.inference) {
-      if (item['label'] == 'VIAM_UNKNOWN') {
+      if (item['label'] == 'UNKNOWN') {
         viamUnknown = (item['confidence'] ?? 0.0).toDouble();
       } else if (item['label'] == 'OK') {
         ok = (item['confidence'] ?? 0.0).toDouble();
@@ -204,7 +204,7 @@ class _DisplayPictureScreenState extends State<DisplayPictureScreen> {
       }
     }
 
-    if (viamUnknown >= 0.01) {
+    if (viamUnknown >= 0.004) {
       borderColor = Colors.yellow;
     } else if (ok > nok) {
       borderColor = Colors.green;
